@@ -25,6 +25,19 @@ as of June 13th 2026:
 | **No Caps:** Bypasses peak-hour slowdowns and strict 3-hour message limits. | **Accumulating Costs:** Very long chat threads resend history, increasing token costs. |
 | **Hardcoded Personas:** System prompts remain strict and do not "drift" during long chats. | **No Native Sync:** Lacks automatic cross-device syncing without manual database setup. |
 
+## available models
+
+| Model | When to Use It |
+| :--- | :--- |
+| **gpt-5.4** | Use for your most complex coding, tool use, and advanced logical workflows. |
+| **gpt-5.4-mini** | Use as your default for everyday tasks—fast, highly competent, and budget-friendly. |
+| **gpt-5.4-nano** | Use for high-volume text classification, simple data parsing, or rapid extraction. |
+| **o3** | Use when you need deep mathematical reasoning, competitive coding, or complex STEM problem-solving. |
+| **o3-mini** | Use for fast, cost-efficient code generation and multi-step logic execution. |
+| **gpt-4o-mini** | Use for highly optimized, ultra-cheap vision tasks and basic multimodal features. |
+| **gpt-4.1** | Use for creative writing and prose automation where reasoning speed matters less than style. |
+| **gpt-4.1-mini** | Use as an alternative, lightweight general-text processor for classic application integrations. |
+
 ## Quick start
 
 ```bash
