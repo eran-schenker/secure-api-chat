@@ -63,6 +63,36 @@ def to_api_messages(messages: list[dict]) -> list[dict]:
     return [{"role": m["role"], "content": m["content"]} for m in messages]
 
 
+def save_chats(chats: dict) -> None:
+    st.session_state["all_chats"] = chats
+
+
+def update_active_chat(active_chat: str, messages: list[dict]) -> None:
+    chats = dict(st.session_state["all_chats"])
+    chats[active_chat] = messages
+    save_chats(chats)
+
+
+def create_new_chat() -> str:
+    chat_id = st.session_state["next_chat_id"]
+    st.session_state["next_chat_id"] = chat_id + 1
+    chat_name = f"Chat {chat_id}"
+    chats = dict(st.session_state["all_chats"])
+    chats[chat_name] = [
+        {"role": "assistant", "content": "Started a new secure session. What's on your mind?"}
+    ]
+    save_chats(chats)
+    return chat_name
+
+
+def delete_chat(chat_name: str) -> None:
+    chats = dict(st.session_state["all_chats"])
+    del chats[chat_name]
+    save_chats(chats)
+    if st.session_state["current_chat"] == chat_name:
+        st.session_state["current_chat"] = next(iter(chats))
+
+
 def render_assistant_message(msg: dict) -> None:
     if msg.get("truncation_warning"):
         st.warning(TRUNCATION_WARNING)
@@ -97,6 +127,16 @@ if "all_chats" not in st.session_state:
 if "current_chat" not in st.session_state:
     st.session_state["current_chat"] = "Chat 1"
 
+if "next_chat_id" not in st.session_state:
+    chat_numbers = []
+    for name in st.session_state["all_chats"]:
+        if name.startswith("Chat "):
+            try:
+                chat_numbers.append(int(name.removeprefix("Chat ")))
+            except ValueError:
+                pass
+    st.session_state["next_chat_id"] = max(chat_numbers, default=1) + 1
+
 model_ids = list(SUPPORTED_MODELS.keys())
 
 # 3. SIDEBAR: Model selector + chat history
@@ -113,15 +153,11 @@ with st.sidebar:
     st.write("---")
     st.title("💬 Chat History")
 
-    if st.button("➕ New Chat", use_container_width=True):
-        new_chat_number = len(st.session_state["all_chats"]) + 1
-        new_chat_name = f"Chat {new_chat_number}"
-
-        st.session_state["all_chats"][new_chat_name] = [
-            {"role": "assistant", "content": "Started a new secure session. What's on your mind?"}
-        ]
-        st.session_state["current_chat"] = new_chat_name
+    if st.button("➕ New Chat", use_container_width=True, key="new_chat"):
+        st.session_state["current_chat"] = create_new_chat()
         st.rerun()
+
+    st.caption(f"{len(st.session_state['all_chats'])} chat(s)")
 
     st.write("---")
 
@@ -143,9 +179,7 @@ with st.sidebar:
 
         with delete_col:
             if can_delete and st.button("🗑️", key=f"del_{chat_name}", help=f"Delete {chat_name}"):
-                del st.session_state["all_chats"][chat_name]
-                if st.session_state["current_chat"] == chat_name:
-                    st.session_state["current_chat"] = next(iter(st.session_state["all_chats"]))
+                delete_chat(chat_name)
                 st.rerun()
 
 # 4. Check for API key (after sidebar so controls stay visible)
@@ -172,14 +206,13 @@ for msg in st.session_state["all_chats"][active_chat]:
 
 # 6. Handle user input
 if prompt := st.chat_input():
-    st.session_state["all_chats"][active_chat].append(
-        {"role": "user", "content": prompt}
-    )
+    history = list(st.session_state["all_chats"][active_chat])
+    history.append({"role": "user", "content": prompt})
     st.chat_message("user").write(prompt)
 
-    history = st.session_state["all_chats"][active_chat]
     truncated = len(history) > MAX_MESSAGES
-    st.session_state["all_chats"][active_chat] = history[-MAX_MESSAGES:]
+    history = history[-MAX_MESSAGES:]
+    update_active_chat(active_chat, history)
 
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
@@ -202,5 +235,7 @@ if prompt := st.chat_input():
             if truncated:
                 assistant_msg["truncation_warning"] = True
 
-            st.session_state["all_chats"][active_chat].append(assistant_msg)
+            history = list(st.session_state["all_chats"][active_chat])
+            history.append(assistant_msg)
+            update_active_chat(active_chat, history)
             render_assistant_message(assistant_msg)

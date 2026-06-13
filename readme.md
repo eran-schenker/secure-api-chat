@@ -2,6 +2,10 @@
 
 A local Streamlit chat UI that talks to OpenAI via the API — not the ChatGPT website.
 
+# Secure API Chat
+
+![Secure API Chat UI](assets/webappscreenshot.png)
+
 ## Why use this?
 
 - Call OpenAI models directly with your own API key
